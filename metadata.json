@@ -1,0 +1,6 @@
+{
+  "name": "StrataGraph",
+  "description": "Indexador estructural de carpetas y grafo cronológico de chats con servidor MCP y SQLite FTS5.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

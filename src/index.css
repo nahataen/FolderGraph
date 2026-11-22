@@ -1,0 +1,90 @@
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: #0b0f17;
+    color: #f1f5f9;
+    overflow: hidden;
+  }
+
+  code, pre, .font-mono {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+.react-flow__node {
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), opacity 180ms ease;
+}
+
+.react-flow__controls {
+  background: #111827 !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  border-radius: 0.5rem !important;
+  box-shadow: none !important;
+}
+
+.react-flow__controls-button {
+  background: transparent !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  color: #cbd5e1 !important;
+  fill: #cbd5e1 !important;
+}
+
+.react-flow__controls-button:hover {
+  background: rgba(56, 189, 248, 0.12) !important;
+  color: #f8fafc !important;
+}
+
+.react-flow__minimap {
+  background: #111827 !important;
+  border: 1px solid rgba(255, 255, 255, 0.09) !important;
+  border-radius: 0.5rem !important;
+}
+
+.react-flow__attribution {
+  display: none !important;
+}
+
+@keyframes nodePulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 var(--pulse-color, rgba(245, 158, 11, 0.7));
+    filter: brightness(1);
+  }
+  50% {
+    box-shadow: 0 0 0 8px rgba(0, 0, 0, 0), 0 0 18px var(--pulse-color, rgba(245, 158, 11, 0.65));
+    filter: brightness(1.22);
+  }
+}
+
+.node-blink-edit {
+  --pulse-color: rgba(245, 158, 11, 0.75);
+  animation: nodePulseGlow 0.95s ease-in-out infinite;
+}
+
+.node-blink-create {
+  --pulse-color: rgba(52, 211, 153, 0.78);
+  animation: nodePulseGlow 0.95s ease-in-out infinite;
+}
+
+.node-blink-move {
+  --pulse-color: rgba(167, 139, 250, 0.8);
+  animation: nodePulseGlow 0.85s ease-in-out infinite;
+}
+
+.node-blink-agent {
+  --pulse-color: rgba(56, 189, 248, 0.78);
+  animation: nodePulseGlow 1.05s ease-in-out infinite;
+}
+
+.edge-flow-active path.react-flow__edge-path {
+  stroke-dasharray: 7 5 !important;
+  animation: dashdraw 0.45s linear infinite !important;
+}
