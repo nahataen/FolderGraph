@@ -29,3 +29,14 @@ export interface IAIProvider {
   embedText(text: string): Promise<EmbeddingResult | null>;
   summarizeText(text: string, context?: string): Promise<string | null>;
 }
+
+export interface ProviderModelsResult {
+  ok: boolean;
+  preset: AIProviderPreset;
+  endpoint: string;
+  models: string[];
+  chatModels: string[];
+  embeddingModels: string[];
+  latencyMs: number;
+  error?: string;
+}

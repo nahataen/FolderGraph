@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
+import { fetchProviderModels } from '../../adapters/ai/providerModels';
 import { StrataGraphMcpTools } from '../../adapters/mcp/mcpTools';
 import type { ChatGraphRepository } from '../../db/chatGraphRepo';
 import type { FileGraphRepository } from '../../db/fileGraphRepo';
@@ -7,13 +8,21 @@ import type { SettingsRepository } from '../../db/settingsRepo';
 import type { WorkspaceRepository } from '../../db/workspaceRepo';
 import type { AgentActivityEvent } from '../../types/protocol';
 
+const presetEnum = z.enum(['disabled', 'ollama_local', 'lmstudio_local', 'nvidia_nim', 'openai', 'custom_https']);
+
 const updateAiSchema = z.object({
-  preset: z.enum(['disabled', 'ollama_local', 'lmstudio_local', 'nvidia_nim', 'openai', 'custom_https']),
+  preset: presetEnum,
   baseUrl: z.string().optional(),
   apiKey: z.string().optional(),
   modelName: z.string().default(''),
   embeddingModel: z.string().optional(),
   enabled: z.boolean(),
+});
+
+const fetchModelsSchema = z.object({
+  preset: presetEnum,
+  baseUrl: z.string().optional(),
+  apiKey: z.string().optional(),
 });
 
 const mcpTestSchema = z.object({
@@ -55,6 +64,24 @@ export function createSettingsRoutes(deps: {
     }
     const updated = deps.settingsRepo.updateAISettings(parsed.data);
     res.json(updated);
+  });
+
+  router.post('/settings/ai/models', async (req, res) => {
+    const parsed = fetchModelsSchema.safeParse(req.body);
+    if (!parsed.success) {
+      res.status(400).json({ ok: false, error: 'Parámetros de proveedor inválidos.' });
+      return;
+    }
+    const existing = deps.settingsRepo.getInternalAIConfig();
+    const typedKey = parsed.data.apiKey?.trim();
+    const effectiveKey =
+      typedKey || (existing.preset === parsed.data.preset ? existing.apiKey : '');
+    const result = await fetchProviderModels({
+      preset: parsed.data.preset,
+      baseUrl: parsed.data.baseUrl,
+      apiKey: effectiveKey,
+    });
+    res.json(result);
   });
 
   router.post('/mcp/invoke', (req, res) => {
