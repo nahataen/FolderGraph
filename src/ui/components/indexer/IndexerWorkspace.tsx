@@ -1,12 +1,11 @@
 import { useState } from 'react';
-import { Background, Controls, MiniMap, ReactFlow, type Edge, type Node, type OnNodesChange } from '@xyflow/react';
+import type { Edge, Node, OnNodesChange } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import type { StructuralFlowNodeData } from '../../../core/layout/dagreLayout';
 import type { FileNodeRecord, NodeDisplayMode, NodeVisualTheme, WorkspaceRecord } from '../../../types/indexer';
 import type { AgentActivityEvent } from '../../../types/protocol';
-import { ActivityHud } from './ActivityHud';
-import { AutoFitView } from './AutoFitView';
-import { structuralEdgeTypes, structuralNodeTypes } from './flowRegistry';
+import type { TimelineScrubberController } from '../../hooks/useTimelineScrubber';
+import { IndexerCanvas } from './IndexerCanvas';
 import { NodeInspector } from './NodeInspector';
 import { WorkspaceSidebar } from './WorkspaceSidebar';
 
@@ -48,6 +47,7 @@ interface IndexerWorkspaceProps {
   recentActivities: AgentActivityEvent[];
   totalTokensSaved: number;
   activePulseCount: number;
+  timeline: TimelineScrubberController;
 }
 
 export function IndexerWorkspace(props: IndexerWorkspaceProps) {
@@ -82,54 +82,28 @@ export function IndexerWorkspace(props: IndexerWorkspaceProps) {
           onHidePanel={() => setLeftOpen(false)}
         />
       )}
-      <main className="flex-1 min-w-0 h-full relative overflow-hidden bg-[#0B0F17]" data-testid="structural-canvas">
-        <ActivityHud
-          recentActivities={props.recentActivities}
-          totalTokensSaved={props.totalTokensSaved}
-          activeCount={props.activePulseCount}
-          leftOpen={leftOpen}
-          rightOpen={rightOpen}
-          onShowLeft={() => setLeftOpen(true)}
-          onShowRight={() => setRightOpen(true)}
-          onCopyCompactContext={() => props.onCopyCompactContext()}
-          canArrangeSubtree={props.canArrangeSubtree}
-          onArrangeSubtree={props.onArrangeSubtree}
-        />
 
-        {props.error && (
-          <div className="absolute top-14 left-4 right-4 z-20 px-3 py-2 rounded-lg bg-rose-950/80 border border-rose-500/40 text-xs text-rose-200">{props.error}</div>
-        )}
-        {props.loading ? (
-          <div className="h-full flex items-center justify-center text-xs font-mono text-slate-400">Indexando árbol estructural...</div>
-        ) : props.flowNodes.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center p-8 text-center">
-            <p className="text-sm font-medium text-slate-200">No hay carpetas indexadas</p>
-            <p className="mt-1 text-xs text-slate-400 max-w-sm">Agrega una ruta de carpeta local en el panel izquierdo para construir el grafo estructural en tiempo real.</p>
-          </div>
-        ) : (
-          <ReactFlow
-            nodes={props.flowNodes}
-            edges={props.flowEdges}
-            nodeTypes={structuralNodeTypes}
-            edgeTypes={structuralEdgeTypes}
-            elevateEdgesOnSelect={false}
-            nodesDraggable
-            onNodesChange={props.onNodesChange}
-            onNodeClick={(_e, node) => props.onSelectNode(node.id)}
-            onNodeDoubleClick={(_e, node) => props.onToggleCollapse(node.id)}
-            onPaneClick={() => props.onSelectNode(null)}
-            fitView
-            fitViewOptions={{ padding: 0.2 }}
-            minZoom={0.15}
-            maxZoom={2.2}
-          >
-            <AutoFitView nodeCount={props.flowNodes.length} panelKey={`${leftOpen}-${rightOpen}`} />
-            <Background color="#1E293B" gap={24} size={1} />
-            <Controls showInteractive={false} />
-            <MiniMap nodeColor="#38BDF8" maskColor="rgba(11, 15, 23, 0.78)" />
-          </ReactFlow>
-        )}
-      </main>
+      <IndexerCanvas
+        flowNodes={props.flowNodes}
+        flowEdges={props.flowEdges}
+        onNodesChange={props.onNodesChange}
+        onSelectNode={props.onSelectNode}
+        onToggleCollapse={props.onToggleCollapse}
+        leftOpen={leftOpen}
+        rightOpen={rightOpen}
+        onShowLeft={() => setLeftOpen(true)}
+        onShowRight={() => setRightOpen(true)}
+        loading={props.loading}
+        error={props.error}
+        recentActivities={props.recentActivities}
+        totalTokensSaved={props.totalTokensSaved}
+        activePulseCount={props.activePulseCount}
+        onCopyCompactContext={props.onCopyCompactContext}
+        canArrangeSubtree={props.canArrangeSubtree}
+        onArrangeSubtree={props.onArrangeSubtree}
+        timeline={props.timeline}
+      />
+
       {rightOpen && (
         <NodeInspector
           node={props.selectedNode}

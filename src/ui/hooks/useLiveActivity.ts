@@ -43,7 +43,7 @@ export function useLiveActivity() {
 
   const pushActivity = useCallback(
     (activity: AgentActivityEvent) => {
-      setRecentActivities((prev) => [activity, ...prev.filter((a) => a.id !== activity.id)].slice(0, 6));
+      setRecentActivities((prev) => [activity, ...prev.filter((a) => a.id !== activity.id)].slice(0, 40));
       if (activity.tokensSaved) {
         setTotalTokensSaved((prev) => prev + activity.tokensSaved!);
       }
@@ -81,7 +81,7 @@ export function useLiveActivity() {
       .then((res) => (res.ok ? res.json() : null))
       .then((data: { activities?: AgentActivityEvent[] } | null) => {
         if (!mounted || !data?.activities) return;
-        setRecentActivities(data.activities.slice(0, 6));
+        setRecentActivities(data.activities.slice(0, 40));
         const saved = data.activities.reduce((acc, a) => acc + (a.tokensSaved ?? 0), 0);
         if (saved > 0) setTotalTokensSaved(saved);
       })

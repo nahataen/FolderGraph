@@ -25,7 +25,7 @@ export function createAgentRoutes(deps: {
 
   const recordActivity = (activity: AgentActivityEvent) => {
     recentActivities.unshift(activity);
-    if (recentActivities.length > 25) recentActivities.pop();
+    if (recentActivities.length > 60) recentActivities.pop();
   };
 
   router.get('/agent/context', (req, res) => {

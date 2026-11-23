@@ -109,7 +109,7 @@ export function ActivityHud(props: ActivityHudProps) {
           )}
         </button>
 
-        {historyOpen && <ActivityHistoryDropdown activities={props.recentActivities} />}
+        {historyOpen && <ActivityHistoryDropdown activities={props.recentActivities.slice(0, 8)} />}
       </div>
 
       <div>

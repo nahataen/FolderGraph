@@ -17,6 +17,7 @@ export default function App() {
 
   const liveActivity = useLiveActivity();
   const fileGraph = useFileGraph({
+    recentActivities: liveActivity.recentActivities,
     activeNodeActivities: liveActivity.activeNodeMap,
     liveTransfers: liveActivity.liveTransfers,
   });
@@ -88,6 +89,7 @@ export default function App() {
           recentActivities={liveActivity.recentActivities}
           totalTokensSaved={liveActivity.totalTokensSaved}
           activePulseCount={liveActivity.activeNodeMap.size}
+          timeline={fileGraph.timeline}
         />
       )}
 

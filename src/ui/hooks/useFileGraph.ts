@@ -7,7 +7,7 @@ import {
 } from '../../core/layout/dagreLayout';
 import { computeSubtreePositions, hasArrangeableSubnodes } from '../../core/layout/subtreeLayout';
 import type { FileEdgeRecord, FileNodeRecord, NodeDisplayMode, NodeVisualTheme, WorkspaceRecord } from '../../types/indexer';
-import type { ActivityKind } from '../../types/protocol';
+import type { ActivityKind, AgentActivityEvent } from '../../types/protocol';
 import {
   copyCompactContextRequest,
   createWorkspaceRequest,
@@ -16,8 +16,10 @@ import {
   rescanWorkspaceRequest,
   searchGraphNodes,
 } from '../utils/graphApi';
+import { useTimelineScrubber } from './useTimelineScrubber';
 
 export function useFileGraph(liveOptions?: {
+  recentActivities?: AgentActivityEvent[];
   activeNodeActivities?: Map<string, ActivityKind>;
   liveTransfers?: LiveTransferEdge[];
 }) {
@@ -108,6 +110,14 @@ export function useFileGraph(liveOptions?: {
     setCollapsedIds(new Set());
   }, []);
 
+  const timeline = useTimelineScrubber({
+    rawNodes,
+    recentActivities: liveOptions?.recentActivities ?? [],
+    collapsedIds,
+    baseActiveActivities: liveOptions?.activeNodeActivities,
+    baseTransfers: liveOptions?.liveTransfers,
+  });
+
   const flowGraph = useMemo(
     () =>
       buildStructuralFlowGraph(rawNodes, rawEdges, {
@@ -117,24 +127,15 @@ export function useFileGraph(liveOptions?: {
         showImportEdges,
         selectedNodeId,
         highlightedIds,
-        collapsedIds,
-        activeNodeActivities: liveOptions?.activeNodeActivities,
-        liveTransfers: liveOptions?.liveTransfers,
+        collapsedIds: timeline.effectiveCollapsedIds,
+        activeNodeActivities: timeline.effectiveActiveActivities,
+        liveTransfers: timeline.effectiveTransfers,
         onToggleCollapse: toggleNodeCollapse,
       }),
     [
-      rawNodes,
-      rawEdges,
-      displayMode,
-      nodeTheme,
-      showSymbols,
-      showImportEdges,
-      selectedNodeId,
-      highlightedIds,
-      collapsedIds,
-      liveOptions?.activeNodeActivities,
-      liveOptions?.liveTransfers,
-      toggleNodeCollapse,
+      rawNodes, rawEdges, displayMode, nodeTheme, showSymbols, showImportEdges,
+      selectedNodeId, highlightedIds, timeline.effectiveCollapsedIds,
+      timeline.effectiveActiveActivities, timeline.effectiveTransfers, toggleNodeCollapse,
     ]
   );
 
@@ -283,5 +284,6 @@ export function useFileGraph(liveOptions?: {
     rescanWorkspace,
     removeWorkspace,
     copyCompactContext,
+    timeline,
   };
 }
