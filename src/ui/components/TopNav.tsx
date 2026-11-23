@@ -16,15 +16,18 @@ export function TopNav({ activeTab, onSelectTab, onOpenMermaid }: TopNavProps) {
   ];
 
   return (
-    <header className="h-14 shrink-0 flex items-center justify-between gap-8 px-6 bg-[#111827] border-b border-white/[0.08]">
-      <div className="flex items-center gap-2.5 shrink-0">
+    <header className="shrink-0 flex flex-wrap items-center justify-between gap-x-6 gap-y-1 px-4 sm:px-6 bg-[#111827] border-b border-white/[0.08]">
+      <div className="h-14 flex items-center gap-2.5 shrink-0">
         <FileCode2 className="w-5 h-5 text-sky-400 shrink-0" aria-hidden="true" />
-        <span className="text-base font-bold tracking-tight text-slate-100 whitespace-nowrap shrink-0">
+        <span className="font-display text-lg sm:text-xl font-bold tracking-tight text-slate-100 whitespace-nowrap shrink-0">
           StrataGraph
         </span>
       </div>
 
-      <nav className="flex items-center gap-7" aria-label="Espacios de trabajo">
+      <nav
+        className="order-3 w-full sm:order-none sm:w-auto flex items-center justify-around sm:justify-center gap-4 sm:gap-7 border-t border-white/[0.06] sm:border-t-0"
+        aria-label="Espacios de trabajo"
+      >
         {navItems.map((item) => {
           const isActive = activeTab === item.id;
           return (
@@ -33,7 +36,7 @@ export function TopNav({ activeTab, onSelectTab, onOpenMermaid }: TopNavProps) {
               type="button"
               onClick={() => onSelectTab(item.id)}
               aria-current={isActive ? 'page' : undefined}
-              className={`relative py-4 text-sm font-medium transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 rounded-sm ${
+              className={`relative py-3 sm:py-4 font-display text-sm font-medium transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 rounded-sm ${
                 isActive ? 'text-slate-100' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
@@ -46,11 +49,11 @@ export function TopNav({ activeTab, onSelectTab, onOpenMermaid }: TopNavProps) {
         })}
       </nav>
 
-      <div className="flex items-center shrink-0">
+      <div className="h-14 flex items-center shrink-0">
         <button
           type="button"
           onClick={onOpenMermaid}
-          className="px-4 py-2 text-xs font-semibold text-slate-950 bg-sky-400 hover:bg-sky-300 rounded-lg transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
+          className="px-3.5 sm:px-4 py-2 text-[13px] font-semibold text-slate-950 bg-sky-400 hover:bg-sky-300 rounded-lg transition-colors whitespace-nowrap shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300"
         >
           Exportar Mermaid
         </button>

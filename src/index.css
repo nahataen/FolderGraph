@@ -3,21 +3,36 @@
 
 @layer base {
   :root {
+    --font-display: "Outfit", "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
     --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
     --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
   }
 
   body {
     font-family: var(--font-sans);
+    font-size: 14px;
+    line-height: 1.5;
+    letter-spacing: 0.005em;
     background-color: #0b0f17;
     color: #f1f5f9;
     overflow: hidden;
+  }
+
+  h1, h2, h3 {
+    font-family: var(--font-display);
+    letter-spacing: -0.015em;
+    text-wrap: balance;
   }
 
   code, pre, .font-mono {
     font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
   }
+}
+
+.font-display {
+  font-family: var(--font-display);
+  letter-spacing: -0.015em;
 }
 
 .react-flow__edges,
@@ -47,6 +62,8 @@
   border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
   color: #cbd5e1 !important;
   fill: #cbd5e1 !important;
+  width: 32px !important;
+  height: 32px !important;
 }
 
 .react-flow__controls-button:hover {
@@ -58,6 +75,26 @@
   background: #111827 !important;
   border: 1px solid rgba(255, 255, 255, 0.09) !important;
   border-radius: 0.5rem !important;
+}
+
+@media (max-width: 639px) {
+  .react-flow__controls {
+    bottom: 174px !important;
+    left: 12px !important;
+  }
+}
+
+@media (max-width: 1023px) {
+  .react-flow__minimap {
+    display: none !important;
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1179px) {
+  .react-flow__minimap {
+    width: 152px !important;
+    height: 108px !important;
+  }
 }
 
 .react-flow__attribution {

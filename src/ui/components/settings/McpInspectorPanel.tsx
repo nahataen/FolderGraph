@@ -41,20 +41,20 @@ export function McpInspectorPanel() {
   };
 
   return (
-    <section className="rounded-xl bg-[#111827] border border-white/[0.08] p-5 space-y-4">
+    <section className="rounded-xl bg-[#111827] border border-white/[0.08] p-5 sm:p-6 space-y-4">
       <div>
-        <h2 className="text-sm font-semibold text-slate-100">Servidor Local MCP y Endpoints para Agentes</h2>
-        <p className="mt-1 text-xs text-slate-400">
-          SSE HTTP: <code className="text-sky-300">/mcp/sse</code> · Stdio: <code className="text-sky-300">npx tsx src/adapters/mcp/mcpStdio.ts</code>
+        <h2 className="font-display text-lg font-semibold text-slate-100">Servidor Local MCP y Endpoints para Agentes</h2>
+        <p className="mt-1.5 text-[13px] text-slate-400 leading-relaxed">
+          SSE HTTP: <code className="text-sky-300">/mcp/sse</code> · Stdio: <code className="text-sky-300 break-all">npx tsx src/adapters/mcp/mcpStdio.ts</code>
         </p>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2.5">
         <select
           aria-label="Seleccionar herramienta MCP"
           value={selectedTool}
           onChange={(e) => setSelectedTool(e.target.value as McpToolName)}
-          className="px-3 py-2 text-xs font-mono bg-[#0B0F17] border border-white/[0.1] rounded-lg text-slate-100"
+          className="flex-1 min-w-[200px] px-3 py-2.5 text-[13px] font-mono bg-[#0B0F17] border border-white/[0.1] rounded-lg text-slate-100"
         >
           <option value="get_compact_context">get_compact_context (ahorro cuota)</option>
           <option value="get_project_structure">get_project_structure</option>
@@ -69,7 +69,7 @@ export function McpInspectorPanel() {
             aria-label="Parámetro query MCP"
             value={queryInput}
             onChange={(e) => setQueryInput(e.target.value)}
-            className="px-3 py-2 text-xs font-mono bg-[#0B0F17] border border-white/[0.1] rounded-lg text-slate-100 w-40"
+            className="px-3 py-2.5 text-[13px] font-mono bg-[#0B0F17] border border-white/[0.1] rounded-lg text-slate-100 w-full sm:w-44"
           />
         )}
 
@@ -77,14 +77,14 @@ export function McpInspectorPanel() {
           type="button"
           onClick={() => void runTool()}
           disabled={running}
-          className="px-3.5 py-2 text-xs font-semibold bg-[#161E2E] hover:bg-[#1E293B] text-sky-400 border border-sky-400/30 rounded-lg flex items-center gap-1.5"
+          className="px-4 py-2.5 text-[13px] font-semibold bg-[#161E2E] hover:bg-[#1E293B] text-sky-400 border border-sky-400/30 rounded-lg flex items-center gap-2"
         >
-          <Play className="w-3.5 h-3.5" aria-hidden="true" />
+          <Play className="w-4 h-4" aria-hidden="true" />
           <span>{running ? 'Ejecutando...' : 'Probar herramienta'}</span>
         </button>
       </div>
 
-      <pre className="p-3.5 rounded-lg bg-[#0B0F17] border border-white/[0.08] text-[11px] font-mono text-slate-300 max-h-72 overflow-auto">
+      <pre className="p-4 rounded-lg bg-[#0B0F17] border border-white/[0.08] text-xs sm:text-[13px] font-mono text-slate-300 max-h-80 overflow-auto leading-relaxed">
         {output || 'Selecciona una herramienta MCP y pulsa "Probar herramienta" para inspeccionar la respuesta en vivo.'}
       </pre>
     </section>

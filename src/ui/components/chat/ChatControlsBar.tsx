@@ -39,17 +39,17 @@ export function ChatControlsBar(props: ChatControlsBarProps) {
   };
 
   return (
-    <div className="shrink-0 bg-[#111827] border-b border-white/[0.08] px-6 py-3 flex flex-wrap items-center justify-between gap-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative">
-          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true" />
+    <div className="shrink-0 bg-[#111827] border-b border-white/[0.08] px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3 sm:gap-4">
+      <div className="flex flex-wrap items-center gap-2.5 w-full xl:w-auto">
+        <div className="relative flex-1 sm:flex-initial">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true" />
           <input
             type="search"
             aria-label="Buscar en mapa de ideas"
             value={props.searchQuery}
             onChange={(e) => props.onSearchChange(e.target.value)}
             placeholder="Buscar ideas..."
-            className="w-48 pl-8 pr-3 py-1.5 text-xs bg-[#0B0F17] border border-white/[0.1] rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-sky-400"
+            className="w-full sm:w-52 pl-9 pr-3 py-2 text-[13px] bg-[#0B0F17] border border-white/[0.1] rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-sky-400"
           />
         </div>
 
@@ -57,7 +57,7 @@ export function ChatControlsBar(props: ChatControlsBarProps) {
           aria-label="Filtrar por tema"
           value={props.topicFilter}
           onChange={(e) => props.onTopicFilterChange(e.target.value)}
-          className="px-2.5 py-1.5 text-xs bg-[#0B0F17] border border-white/[0.1] rounded-lg text-slate-200 focus:outline-none focus:border-sky-400"
+          className="px-3 py-2 text-[13px] bg-[#0B0F17] border border-white/[0.1] rounded-lg text-slate-200 focus:outline-none focus:border-sky-400"
         >
           <option value="all">Todos los temas</option>
           {props.topics.map((topic) => (
@@ -65,13 +65,13 @@ export function ChatControlsBar(props: ChatControlsBarProps) {
           ))}
         </select>
 
-        <div className="flex items-center gap-1 p-1 bg-[#0B0F17] rounded-lg border border-white/[0.08]">
+        <div className="flex flex-wrap items-center gap-1 p-1 bg-[#0B0F17] rounded-lg border border-white/[0.08]">
           {(['all', 'connected', 'isolated'] as const).map((mode) => (
             <button
               key={mode}
               type="button"
               onClick={() => props.onFilterModeChange(mode)}
-              className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
+              className={`px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors whitespace-nowrap ${
                 props.filterMode === mode ? 'bg-[#1E293B] text-sky-400' : 'text-slate-400 hover:text-slate-200'
               }`}
             >
@@ -83,30 +83,30 @@ export function ChatControlsBar(props: ChatControlsBarProps) {
         <button
           type="button"
           onClick={props.onToggleExpandAll}
-          className="px-3 py-1.5 text-xs font-medium text-slate-300 bg-[#161E2E] hover:bg-[#1E293B] border border-white/[0.08] rounded-lg whitespace-nowrap"
+          className="px-3 py-2 text-xs sm:text-[13px] font-medium text-slate-200 bg-[#161E2E] hover:bg-[#1E293B] border border-white/[0.08] rounded-lg whitespace-nowrap"
         >
           {props.expandAll ? 'Vista puntos' : 'Expandir tarjetas'}
         </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="flex items-center gap-2 flex-1 max-w-md min-w-[260px]">
+      <form onSubmit={handleSubmit} className="flex items-center gap-2 flex-1 w-full xl:max-w-md min-w-0">
         <input
           type="text"
           aria-label="Nueva idea o mensaje"
           value={content}
           onChange={(e) => setContent(e.target.value)}
           placeholder="Registrar idea (ej: revisar `scanner.ts`)..."
-          className="flex-1 min-w-0 px-3 py-1.5 text-xs bg-[#0B0F17] border border-white/[0.1] rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-sky-400"
+          className="flex-1 min-w-0 px-3 py-2 text-[13px] bg-[#0B0F17] border border-white/[0.1] rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-sky-400"
         />
         <button
           type="submit"
           disabled={submitting}
-          className="px-3 py-1.5 text-xs font-semibold bg-sky-400 hover:bg-sky-300 disabled:opacity-50 text-slate-950 rounded-lg flex items-center gap-1 whitespace-nowrap shrink-0"
+          className="px-3.5 py-2 text-[13px] font-semibold bg-sky-400 hover:bg-sky-300 disabled:opacity-50 text-slate-950 rounded-lg flex items-center gap-1.5 whitespace-nowrap shrink-0"
         >
-          <Plus className="w-3.5 h-3.5" aria-hidden="true" />
+          <Plus className="w-4 h-4" aria-hidden="true" />
           <span>Añadir idea</span>
         </button>
-        {error && <span className="text-[11px] text-rose-400">{error}</span>}
+        {error && <span className="text-xs text-rose-400">{error}</span>}
       </form>
     </div>
   );

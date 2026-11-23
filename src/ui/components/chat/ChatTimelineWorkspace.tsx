@@ -47,19 +47,19 @@ export function ChatTimelineWorkspace(props: ChatTimelineWorkspaceProps) {
       />
 
       <div className="flex-1 min-h-0 flex relative bg-[#0B0F17]" data-testid="chat-timeline-canvas">
-        <div className="absolute top-3 left-4 z-10 pointer-events-none text-[11px] font-mono text-slate-400">
+        <div className="absolute top-3 left-4 z-10 pointer-events-none text-xs font-mono text-slate-400">
           Eje X: cronología · Eje Y: carriles de tema ({props.topics.length})
         </div>
 
         <main className="flex-1 min-w-0 h-full">
           {props.loading ? (
-            <div className="h-full flex items-center justify-center text-xs font-mono text-slate-400">
+            <div className="h-full flex items-center justify-center text-sm font-mono text-slate-400">
               Cargando mapa de ideas...
             </div>
           ) : props.flowNodes.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center p-8 text-center">
-              <p className="text-sm font-medium text-slate-200">Sin nodos visibles con este filtro</p>
-              <p className="mt-1 text-xs text-slate-400">Ajusta el filtro de tema o añade una nueva idea arriba.</p>
+              <p className="text-base font-medium text-slate-200">Sin nodos visibles con este filtro</p>
+              <p className="mt-1 text-sm text-slate-400">Ajusta el filtro de tema o añade una nueva idea arriba.</p>
             </div>
           ) : (
             <ReactFlow
@@ -85,31 +85,31 @@ export function ChatTimelineWorkspace(props: ChatTimelineWorkspaceProps) {
         </main>
 
         {props.selectedChatNode && (
-          <aside className="w-[290px] shrink-0 bg-[#111827] border-l border-white/[0.08] p-4 flex flex-col gap-3">
+          <aside className="absolute inset-y-0 right-0 z-30 lg:static w-[min(90vw,340px)] lg:w-[320px] shrink-0 bg-[#111827] border-l border-white/[0.08] p-5 flex flex-col gap-3.5 shadow-2xl lg:shadow-none">
             <div className="flex items-center justify-between">
-              <span className="text-xs font-mono text-sky-400">{props.selectedChatNode.topicCluster}</span>
+              <span className="text-[13px] font-mono font-semibold text-sky-400">{props.selectedChatNode.topicCluster}</span>
               <button
                 type="button"
                 onClick={() => props.onSelectChatNode(null)}
                 aria-label="Cerrar detalle de idea"
-                className="p-1 text-slate-400 hover:text-slate-100 rounded"
+                className="p-1.5 text-slate-400 hover:text-slate-100 rounded-md"
               >
                 <X className="w-4 h-4" aria-hidden="true" />
               </button>
             </div>
-            <p className="text-[11px] font-mono text-slate-400">
+            <p className="text-xs font-mono text-slate-400">
               {formatFullDateTime(props.selectedChatNode.timestamp)} ({formatRelativeTime(props.selectedChatNode.timestamp)}) ·{' '}
               {props.selectedChatNode.isIsolated ? 'Nodo suelto' : 'Conectado al hilo'}
             </p>
-            <p className="text-xs leading-relaxed text-slate-200 bg-[#0B0F17] p-3 rounded-lg border border-white/[0.07]">
+            <p className="text-[13px] leading-relaxed text-slate-200 bg-[#0B0F17] p-3.5 rounded-lg border border-white/[0.07]">
               {props.selectedChatNode.content}
             </p>
             <button
               type="button"
               onClick={() => void props.onDeleteMessage(props.selectedChatNode!.id)}
-              className="mt-auto py-2 px-3 text-xs font-medium text-rose-300 bg-rose-950/40 hover:bg-rose-950/70 border border-rose-500/30 rounded-lg flex items-center justify-center gap-1.5"
+              className="mt-auto py-2.5 px-3.5 text-[13px] font-medium text-rose-300 bg-rose-950/40 hover:bg-rose-950/70 border border-rose-500/30 rounded-lg flex items-center justify-center gap-2"
             >
-              <Trash2 className="w-3.5 h-3.5" aria-hidden="true" />
+              <Trash2 className="w-4 h-4" aria-hidden="true" />
               <span>Eliminar nodo</span>
             </button>
           </aside>

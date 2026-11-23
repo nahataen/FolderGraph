@@ -28,13 +28,13 @@ function getNodeDimensions(
     return isMinimal ? { width: 10, height: 10 } : { width: 12, height: 12 };
   }
   if (node.type === 'folder') {
-    if (node.metadata.isRoot) return isMinimal ? { width: 96, height: 96 } : { width: 116, height: 116 };
-    if (displayMode === 'detailed' || isFocused) return { width: 184, height: 78 };
-    if (displayMode === 'capsules') return { width: 142, height: 36 };
+    if (node.metadata.isRoot) return isMinimal ? { width: 96, height: 96 } : { width: 118, height: 118 };
+    if (displayMode === 'detailed' || isFocused) return { width: 196, height: 84 };
+    if (displayMode === 'capsules') return { width: 154, height: 38 };
     return isMinimal ? { width: 58, height: 58 } : { width: 70, height: 70 };
   }
-  if (displayMode === 'detailed' || isFocused) return { width: 212, height: 90 };
-  if (displayMode === 'capsules') return { width: 164, height: 34 };
+  if (displayMode === 'detailed' || isFocused) return { width: 224, height: 96 };
+  if (displayMode === 'capsules') return { width: 176, height: 38 };
   return isMinimal ? { width: 76, height: 28 } : { width: 96, height: 32 };
 }
 

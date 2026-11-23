@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Edge, Node, OnNodesChange } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import type { StructuralFlowNodeData } from '../../../core/layout/dagreLayout';
 import type { FileNodeRecord, NodeDisplayMode, NodeVisualTheme, WorkspaceRecord } from '../../../types/indexer';
 import type { AgentActivityEvent } from '../../../types/protocol';
+import { useBreakpoint } from '../../hooks/useBreakpoint';
 import type { TimelineScrubberController } from '../../hooks/useTimelineScrubber';
 import { IndexerCanvas } from './IndexerCanvas';
 import { NodeInspector } from './NodeInspector';
@@ -51,11 +52,34 @@ interface IndexerWorkspaceProps {
 }
 
 export function IndexerWorkspace(props: IndexerWorkspaceProps) {
-  const [leftOpen, setLeftOpen] = useState(true);
-  const [rightOpen, setRightOpen] = useState(true);
+  const { isMobile, isCompact } = useBreakpoint();
+  const [leftOpen, setLeftOpen] = useState(() => (typeof window === 'undefined' ? true : window.innerWidth >= 768));
+  const [rightOpen, setRightOpen] = useState(() => (typeof window === 'undefined' ? true : window.innerWidth >= 1180));
+
+  useEffect(() => {
+    if (isMobile) {
+      setLeftOpen(false);
+      setRightOpen(false);
+    } else if (isCompact) {
+      setRightOpen(false);
+    }
+  }, [isMobile, isCompact]);
+
+  const showBackdrop = (isMobile && leftOpen) || (isCompact && rightOpen);
 
   return (
-    <div className="flex-1 min-h-0 flex overflow-hidden">
+    <div className="relative flex-1 min-h-0 flex overflow-hidden">
+      {showBackdrop && (
+        <div
+          aria-hidden="true"
+          onClick={() => {
+            if (isMobile) setLeftOpen(false);
+            setRightOpen(false);
+          }}
+          className="absolute inset-0 z-30 bg-black/50 backdrop-blur-[1px]"
+        />
+      )}
+
       {leftOpen && (
         <WorkspaceSidebar
           workspaces={props.workspaces}
@@ -80,6 +104,7 @@ export function IndexerWorkspace(props: IndexerWorkspaceProps) {
           onResetPositions={props.onResetPositions}
           hasCustomPositions={props.hasCustomPositions}
           onHidePanel={() => setLeftOpen(false)}
+          overlayMode={isMobile}
         />
       )}
 
@@ -114,6 +139,7 @@ export function IndexerWorkspace(props: IndexerWorkspaceProps) {
           onCopyCompactContext={props.onCopyCompactContext}
           canArrangeSubtree={props.canArrangeSubtree}
           onArrangeSubtree={props.onArrangeSubtree}
+          overlayMode={isCompact}
         />
       )}
     </div>

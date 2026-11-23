@@ -27,6 +27,7 @@ interface WorkspaceSidebarProps {
   onResetPositions: () => void;
   hasCustomPositions: boolean;
   onHidePanel: () => void;
+  overlayMode?: boolean;
 }
 
 export function WorkspaceSidebar(props: WorkspaceSidebarProps) {
@@ -52,39 +53,43 @@ export function WorkspaceSidebar(props: WorkspaceSidebarProps) {
     }
   };
 
+  const positionClass = props.overlayMode
+    ? 'absolute inset-y-0 left-0 z-40 shadow-2xl w-[min(88vw,340px)]'
+    : 'w-[304px] xl:w-[324px] shrink-0';
+
   return (
-    <aside className="w-[272px] shrink-0 bg-[#111827] border-r border-white/[0.08] flex flex-col overflow-y-auto p-4 gap-4" data-testid="left-panel">
+    <aside className={`${positionClass} bg-[#111827] border-r border-white/[0.08] flex flex-col overflow-y-auto p-4 sm:p-5 gap-5`} data-testid="left-panel">
       <div>
-        <div className="flex items-center justify-between mb-2">
-          <label htmlFor="fts-search" className="text-xs font-semibold text-slate-300">Búsqueda instantánea (FTS5)</label>
+        <div className="flex items-center justify-between mb-2.5">
+          <label htmlFor="fts-search" className="font-display text-sm font-semibold text-slate-100">Búsqueda instantánea (FTS5)</label>
           <button
             type="button"
             onClick={props.onHidePanel}
             aria-label="Ocultar panel izquierdo"
             title="Ocultar panel izquierdo"
-            className="p-1 text-slate-400 hover:text-slate-100 hover:bg-white/[0.06] rounded"
+            className="p-1.5 text-slate-400 hover:text-slate-100 hover:bg-white/[0.06] rounded-md"
           >
-            <PanelLeftClose className="w-3.5 h-3.5" aria-hidden="true" />
+            <PanelLeftClose className="w-4 h-4" aria-hidden="true" />
           </button>
         </div>
         <div className="relative">
-          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true" />
+          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" aria-hidden="true" />
           <input
             id="fts-search"
             type="search"
             value={props.searchQuery}
             onChange={(e) => props.onSearchChange(e.target.value)}
             placeholder="Archivo, función o enlace..."
-            className="w-full pl-8 pr-3 py-2 text-xs bg-[#0B0F17] border border-white/[0.1] rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-sky-400"
+            className="w-full pl-9 pr-3 py-2.5 text-[13px] bg-[#0B0F17] border border-white/[0.1] rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-sky-400"
           />
         </div>
         {props.searchQuery.trim() && (
-          <p className="mt-1.5 text-[11px] font-mono text-sky-400">{props.highlightedCount} coincidencias encontradas</p>
+          <p className="mt-1.5 text-xs font-mono text-sky-400">{props.highlightedCount} coincidencias encontradas</p>
         )}
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-2 border-t border-white/[0.07] pt-4">
-        <label htmlFor="folder-path-input" className="block text-xs font-semibold text-slate-300">Agregar carpeta local</label>
+      <form onSubmit={handleSubmit} className="space-y-2.5 border-t border-white/[0.07] pt-4">
+        <label htmlFor="folder-path-input" className="block font-display text-sm font-semibold text-slate-100">Agregar carpeta local</label>
         <div className="flex gap-2">
           <input
             id="folder-path-input"
@@ -92,19 +97,19 @@ export function WorkspaceSidebar(props: WorkspaceSidebarProps) {
             value={folderInput}
             onChange={(e) => setFolderInput(e.target.value)}
             placeholder="/app/applet/src"
-            className="flex-1 min-w-0 px-2.5 py-2 text-xs font-mono bg-[#0B0F17] border border-white/[0.1] rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-sky-400"
+            className="flex-1 min-w-0 px-3 py-2.5 text-[13px] font-mono bg-[#0B0F17] border border-white/[0.1] rounded-lg text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-sky-400"
           />
           <button
             type="submit"
             disabled={submitting}
             aria-label="Indexar carpeta"
-            className="px-3 py-2 text-xs font-semibold bg-sky-400 hover:bg-sky-300 disabled:opacity-50 text-slate-950 rounded-lg transition-colors whitespace-nowrap shrink-0 flex items-center gap-1"
+            className="px-3.5 py-2.5 text-[13px] font-semibold bg-sky-400 hover:bg-sky-300 disabled:opacity-50 text-slate-950 rounded-lg transition-colors whitespace-nowrap shrink-0 flex items-center gap-1.5"
           >
-            <FolderPlus className="w-3.5 h-3.5" aria-hidden="true" />
+            <FolderPlus className="w-4 h-4" aria-hidden="true" />
             <span>Indexar</span>
           </button>
         </div>
-        {formError && <p className="text-[11px] text-rose-400">{formError}</p>}
+        {formError && <p className="text-xs text-rose-400">{formError}</p>}
       </form>
 
       <WorkspaceList
