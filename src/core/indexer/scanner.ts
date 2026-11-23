@@ -1,8 +1,11 @@
-import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import type { FileEdgeRecord, FileNodeRecord, WorkspaceRecord } from '../../types/indexer';
+import { readFsTimestamps } from './fsTimestamps';
 import { ParserRegistry } from './parsers/parserRegistry';
+import { appendFileSymbols, makeNodeId } from './symbolNodes';
+
+export { makeNodeId };
 
 const IGNORED_DIRS = new Set([
   'node_modules',
@@ -21,10 +24,6 @@ const TEXT_EXTENSIONS = new Set([
   '.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs',
   '.py', '.md', '.mdx', '.json', '.css', '.html', '.sql', '.rs', '.toml', '.yml', '.yaml',
 ]);
-
-export function makeNodeId(workspaceId: string, rawKey: string): string {
-  return crypto.createHash('sha1').update(`${workspaceId}:${rawKey}`).digest('hex').slice(0, 16);
-}
 
 export function normalizePosix(p: string): string {
   return p.replace(/\\/g, '/');
@@ -59,13 +58,18 @@ function resolveImportTarget(
 export function scanWorkspaceDirectory(
   workspace: WorkspaceRecord,
   registry = new ParserRegistry(),
-  maxFiles = 280
+  maxFiles = 280,
+  previousNodes: FileNodeRecord[] = []
 ): { nodes: FileNodeRecord[]; edges: FileEdgeRecord[] } {
   const nodes: FileNodeRecord[] = [];
   const edges: FileEdgeRecord[] = [];
-  const now = Date.now();
+  const prevCreatedById = new Map<string, number>();
+  for (const prev of previousNodes) {
+    if (prev.metadata.createdAt) prevCreatedById.set(prev.id, prev.metadata.createdAt);
+  }
   const rootResolved = normalizePosix(path.resolve(workspace.rootPath));
   const rootId = makeNodeId(workspace.id, rootResolved);
+  const rootTs = readFsTimestamps(rootResolved, prevCreatedById.get(rootId));
 
   nodes.push({
     id: rootId,
@@ -74,8 +78,15 @@ export function scanWorkspaceDirectory(
     name: workspace.name,
     type: 'folder',
     sizeWeight: 4,
-    metadata: { depth: 0, isRoot: true, workspaceId: workspace.id, workspaceName: workspace.name },
-    updatedAt: now,
+    metadata: {
+      depth: 0,
+      isRoot: true,
+      workspaceId: workspace.id,
+      workspaceName: workspace.name,
+      createdAt: rootTs.createdAt,
+      modifiedAt: rootTs.modifiedAt,
+    },
+    updatedAt: rootTs.modifiedAt,
   });
 
   const filePathToId = new Map<string, string>();
@@ -101,6 +112,7 @@ export function scanWorkspaceDirectory(
       const fullPath = normalizePosix(path.join(dirPath, entry.name));
       if (entry.isDirectory()) {
         const folderId = makeNodeId(workspace.id, fullPath);
+        const folderTs = readFsTimestamps(fullPath, prevCreatedById.get(folderId));
         nodes.push({
           id: folderId,
           parentId,
@@ -108,8 +120,15 @@ export function scanWorkspaceDirectory(
           name: entry.name,
           type: 'folder',
           sizeWeight: 2.5,
-          metadata: { depth, isRoot: false, workspaceId: workspace.id, workspaceName: workspace.name },
-          updatedAt: now,
+          metadata: {
+            depth,
+            isRoot: false,
+            workspaceId: workspace.id,
+            workspaceName: workspace.name,
+            createdAt: folderTs.createdAt,
+            modifiedAt: folderTs.modifiedAt,
+          },
+          updatedAt: folderTs.modifiedAt,
         });
         edges.push({ id: `contains:${parentId}:${folderId}`, sourceId: parentId, targetId: folderId, relationType: 'contains' });
         walk(fullPath, folderId, depth + 1);
@@ -117,6 +136,7 @@ export function scanWorkspaceDirectory(
         fileCount += 1;
         const ext = path.extname(entry.name).toLowerCase();
         const fileId = makeNodeId(workspace.id, fullPath);
+        const fileTs = readFsTimestamps(fullPath, prevCreatedById.get(fileId));
         filePathToId.set(fullPath, fileId);
         fileNameToId.set(path.basename(entry.name, ext).toLowerCase(), fileId);
 
@@ -148,8 +168,10 @@ export function scanWorkspaceDirectory(
             depth,
             workspaceId: workspace.id,
             workspaceName: workspace.name,
+            createdAt: fileTs.createdAt,
+            modifiedAt: fileTs.modifiedAt,
           },
-          updatedAt: now,
+          updatedAt: fileTs.modifiedAt,
         });
         edges.push({ id: `contains:${parentId}:${fileId}`, sourceId: parentId, targetId: fileId, relationType: 'contains' });
 
@@ -157,21 +179,7 @@ export function scanWorkspaceDirectory(
           pendingImports.push({ sourceId: fileId, filePath: fullPath, imports: parsed.imports, wikilinks: parsed.wikilinks });
         }
 
-        parsed.symbols.slice(0, 6).forEach((sym) => {
-          const symPath = `${fullPath}#${sym.kind}:${sym.name}`;
-          const symId = makeNodeId(workspace.id, symPath);
-          nodes.push({
-            id: symId,
-            parentId: fileId,
-            path: symPath,
-            name: sym.name,
-            type: 'symbol',
-            sizeWeight: 0.6,
-            metadata: { symbolKind: sym.kind, lines: sym.line, depth: depth + 1, workspaceId: workspace.id },
-            updatedAt: now,
-          });
-          edges.push({ id: `contains:${fileId}:${symId}`, sourceId: fileId, targetId: symId, relationType: 'contains' });
-        });
+        appendFileSymbols(workspace.id, fileId, fullPath, depth, parsed.symbols, fileTs, nodes, edges);
       }
     }
   }
@@ -203,7 +211,8 @@ export function scanSingleFileNodes(
   const parentId = makeNodeId(workspace.id, parentDir);
   const ext = path.extname(normalizedFile).toLowerCase();
   const fileId = makeNodeId(workspace.id, normalizedFile);
-  const now = Date.now();
+  const existingFile = allExistingNodes.find((n) => n.id === fileId);
+  const fileTs = readFsTimestamps(normalizedFile, existingFile?.metadata.createdAt);
 
   const parentNode = allExistingNodes.find((n) => n.id === parentId);
   const depth = parentNode ? parentNode.metadata.depth + 1 : 1;
@@ -230,8 +239,10 @@ export function scanSingleFileNodes(
         depth,
         workspaceId: workspace.id,
         workspaceName: workspace.name,
+        createdAt: fileTs.createdAt,
+        modifiedAt: fileTs.modifiedAt,
       },
-      updatedAt: now,
+      updatedAt: fileTs.modifiedAt,
     },
   ];
 
@@ -240,21 +251,7 @@ export function scanSingleFileNodes(
     edges.push({ id: `contains:${parentId}:${fileId}`, sourceId: parentId, targetId: fileId, relationType: 'contains' });
   }
 
-  parsed.symbols.slice(0, 6).forEach((sym) => {
-    const symPath = `${normalizedFile}#${sym.kind}:${sym.name}`;
-    const symId = makeNodeId(workspace.id, symPath);
-    nodes.push({
-      id: symId,
-      parentId: fileId,
-      path: symPath,
-      name: sym.name,
-      type: 'symbol',
-      sizeWeight: 0.6,
-      metadata: { symbolKind: sym.kind, lines: sym.line, depth: depth + 1, workspaceId: workspace.id },
-      updatedAt: now,
-    });
-    edges.push({ id: `contains:${fileId}:${symId}`, sourceId: fileId, targetId: symId, relationType: 'contains' });
-  });
+  appendFileSymbols(workspace.id, fileId, normalizedFile, depth, parsed.symbols, fileTs, nodes, edges);
 
   return { nodes, edges };
 }

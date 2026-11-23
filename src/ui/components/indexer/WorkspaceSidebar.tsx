@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react';
 import { FolderPlus, PanelLeftClose, Search } from 'lucide-react';
-import type { NodeDisplayMode, WorkspaceRecord } from '../../../types/indexer';
+import type { NodeDisplayMode, NodeVisualTheme, WorkspaceRecord } from '../../../types/indexer';
 import { GraphStyleControls } from './GraphStyleControls';
 import { WorkspaceList } from './WorkspaceList';
 
@@ -16,6 +16,8 @@ interface WorkspaceSidebarProps {
   highlightedCount: number;
   displayMode: NodeDisplayMode;
   onDisplayModeChange: (mode: NodeDisplayMode) => void;
+  nodeTheme: NodeVisualTheme;
+  onNodeThemeChange: (theme: NodeVisualTheme) => void;
   showSymbols: boolean;
   onToggleSymbols: () => void;
   showImportEdges: boolean;
@@ -116,6 +118,8 @@ export function WorkspaceSidebar(props: WorkspaceSidebarProps) {
       <GraphStyleControls
         displayMode={props.displayMode}
         onDisplayModeChange={props.onDisplayModeChange}
+        nodeTheme={props.nodeTheme}
+        onNodeThemeChange={props.onNodeThemeChange}
         showSymbols={props.showSymbols}
         onToggleSymbols={props.onToggleSymbols}
         showImportEdges={props.showImportEdges}

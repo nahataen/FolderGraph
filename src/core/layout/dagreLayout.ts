@@ -1,12 +1,13 @@
 import dagre from '@dagrejs/dagre';
 import type { Edge, Node } from '@xyflow/react';
-import type { FileEdgeRecord, FileNodeRecord, NodeDisplayMode } from '../../types/indexer';
+import type { FileEdgeRecord, FileNodeRecord, NodeDisplayMode, NodeVisualTheme } from '../../types/indexer';
 import type { ActivityKind } from '../../types/protocol';
 import {
   buildActiveAncestorMap,
   buildStructuralEdges,
   type LiveTransferEdge,
 } from './activityEdges';
+import type { EdgeNodeBound } from './edgeRouting';
 import {
   areSymbolsExpanded,
   getSymbolGroupFootprint,
@@ -28,10 +29,12 @@ function getNodeDimensions(
   }
   if (node.type === 'folder') {
     if (node.metadata.isRoot) return isMinimal ? { width: 96, height: 96 } : { width: 116, height: 116 };
-    if (displayMode === 'detailed' || isFocused) return { width: 176, height: 62 };
+    if (displayMode === 'detailed' || isFocused) return { width: 184, height: 78 };
+    if (displayMode === 'capsules') return { width: 142, height: 36 };
     return isMinimal ? { width: 58, height: 58 } : { width: 70, height: 70 };
   }
-  if (displayMode === 'detailed' || isFocused) return { width: 204, height: 74 };
+  if (displayMode === 'detailed' || isFocused) return { width: 212, height: 90 };
+  if (displayMode === 'capsules') return { width: 164, height: 34 };
   return isMinimal ? { width: 76, height: 28 } : { width: 96, height: 32 };
 }
 
@@ -80,6 +83,7 @@ export function buildStructuralFlowGraph(
   edgeRecords: FileEdgeRecord[],
   options: {
     displayMode: NodeDisplayMode;
+    nodeTheme?: NodeVisualTheme;
     showSymbols: boolean;
     showImportEdges: boolean;
     selectedNodeId: string | null;
@@ -176,6 +180,7 @@ export function buildStructuralFlowGraph(
       data: {
         record: rec,
         displayMode: options.displayMode,
+        nodeTheme: options.nodeTheme,
         isHighlighted: options.highlightedIds.has(rec.id),
         isDimmed: hasSearchHighlight && !options.highlightedIds.has(rec.id),
         isSelected: options.selectedNodeId === rec.id,
@@ -196,6 +201,7 @@ export function buildStructuralFlowGraph(
     if (!parentPos) continue;
     const placed = layoutParentSymbols(parentPos, syms, {
       displayMode: options.displayMode,
+      nodeTheme: options.nodeTheme,
       selectedNodeId: options.selectedNodeId,
       highlightedIds: options.highlightedIds,
       hasSearchHighlight,
@@ -205,11 +211,35 @@ export function buildStructuralFlowGraph(
     flowNodes.push(...placed);
   }
 
+  const nodeBounds = new Map<string, EdgeNodeBound>();
+  for (const [id, pos] of positionedMap.entries()) {
+    nodeBounds.set(id, {
+      id,
+      left: pos.x - pos.width / 2,
+      right: pos.x + pos.width / 2,
+      top: pos.y - pos.height / 2,
+      bottom: pos.y + pos.height / 2,
+    });
+  }
+  for (const node of flowNodes) {
+    if (node.data.record.type !== 'symbol') continue;
+    const w = node.data.isSymbolExpanded ? 132 : 12;
+    const h = node.data.isSymbolExpanded ? 28 : 12;
+    nodeBounds.set(node.id, {
+      id: node.id,
+      left: node.position.x,
+      right: node.position.x + w,
+      top: node.position.y,
+      bottom: node.position.y + h,
+    });
+  }
+
   const flowEdges = buildStructuralEdges(edgeRecords, visibleRecords, {
     selectedNodeId: options.selectedNodeId,
     showImportEdges: options.showImportEdges,
     activeMap,
     liveTransfers: options.liveTransfers,
+    nodeBounds,
   });
 
   return { nodes: flowNodes, edges: flowEdges };

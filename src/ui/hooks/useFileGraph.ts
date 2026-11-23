@@ -5,8 +5,17 @@ import {
   type LiveTransferEdge,
   type StructuralFlowNodeData,
 } from '../../core/layout/dagreLayout';
-import type { FileEdgeRecord, FileNodeRecord, NodeDisplayMode, WorkspaceRecord } from '../../types/indexer';
+import { computeSubtreePositions, hasArrangeableSubnodes } from '../../core/layout/subtreeLayout';
+import type { FileEdgeRecord, FileNodeRecord, NodeDisplayMode, NodeVisualTheme, WorkspaceRecord } from '../../types/indexer';
 import type { ActivityKind } from '../../types/protocol';
+import {
+  copyCompactContextRequest,
+  createWorkspaceRequest,
+  deleteWorkspaceRequest,
+  fetchGraphData,
+  rescanWorkspaceRequest,
+  searchGraphNodes,
+} from '../utils/graphApi';
 
 export function useFileGraph(liveOptions?: {
   activeNodeActivities?: Map<string, ActivityKind>;
@@ -17,6 +26,7 @@ export function useFileGraph(liveOptions?: {
   const [rawEdges, setRawEdges] = useState<FileEdgeRecord[]>([]);
   const [activeWorkspaceId, setActiveWorkspaceId] = useState<string>('all');
   const [displayMode, setDisplayModeState] = useState<NodeDisplayMode>('hybrid');
+  const [nodeTheme, setNodeTheme] = useState<NodeVisualTheme>('classic');
   const [showSymbols, setShowSymbols] = useState<boolean>(true);
   const [showImportEdges, setShowImportEdges] = useState<boolean>(false);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
@@ -39,13 +49,7 @@ export function useFileGraph(liveOptions?: {
   const fetchGraph = useCallback(async (wsId = activeWorkspaceId) => {
     try {
       setError(null);
-      const res = await fetch(`/api/graph?workspaceId=${encodeURIComponent(wsId)}`);
-      if (!res.ok) throw new Error('Error al cargar el grafo estructural.');
-      const data = (await res.json()) as {
-        workspaces: WorkspaceRecord[];
-        nodes: FileNodeRecord[];
-        edges: FileEdgeRecord[];
-      };
+      const data = await fetchGraphData(wsId);
       setWorkspaces(data.workspaces);
       setRawNodes(data.nodes);
       setRawEdges(data.edges);
@@ -75,10 +79,8 @@ export function useFileGraph(liveOptions?: {
     }
     const timer = setTimeout(async () => {
       try {
-        const res = await fetch(`/api/search?q=${encodeURIComponent(trimmed)}`);
-        if (!res.ok) return;
-        const data = (await res.json()) as { nodes: FileNodeRecord[] };
-        setHighlightedIds(new Set(data.nodes.map((n) => n.id)));
+        const nodes = await searchGraphNodes(trimmed);
+        setHighlightedIds(new Set(nodes.map((n) => n.id)));
       } catch {
         // Ignore transient search aborts
       }
@@ -110,6 +112,7 @@ export function useFileGraph(liveOptions?: {
     () =>
       buildStructuralFlowGraph(rawNodes, rawEdges, {
         displayMode,
+        nodeTheme,
         showSymbols,
         showImportEdges,
         selectedNodeId,
@@ -123,6 +126,7 @@ export function useFileGraph(liveOptions?: {
       rawNodes,
       rawEdges,
       displayMode,
+      nodeTheme,
       showSymbols,
       showImportEdges,
       selectedNodeId,
@@ -181,50 +185,57 @@ export function useFileGraph(liveOptions?: {
     }
   }, []);
 
+  const canArrangeSelectedSubtree = useMemo(
+    () => (selectedNodeId ? hasArrangeableSubnodes(selectedNodeId, rawNodes, showSymbols) : false),
+    [selectedNodeId, rawNodes, showSymbols]
+  );
+
+  const arrangeSelectedSubtree = useCallback(() => {
+    if (!selectedNodeId || !canArrangeSelectedSubtree) return;
+    const anchorPosition = flowNodes.find((n) => n.id === selectedNodeId)?.position;
+    const arranged = computeSubtreePositions(rawNodes, rawEdges, {
+      rootId: selectedNodeId,
+      anchorPosition,
+      displayMode,
+      showSymbols,
+      collapsedIds,
+      highlightedIds,
+    });
+    if (Object.keys(arranged).length === 0) return;
+
+    Object.assign(customPositionsRef.current, arranged);
+    setHasCustomPositions(true);
+    if (collapsedIds.has(selectedNodeId)) {
+      setCollapsedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(selectedNodeId);
+        return next;
+      });
+    }
+    setFlowNodes((prev) =>
+      prev.map((node) => (arranged[node.id] ? { ...node, position: arranged[node.id] } : node))
+    );
+  }, [selectedNodeId, canArrangeSelectedSubtree, flowNodes, rawNodes, rawEdges, displayMode, showSymbols, collapsedIds, highlightedIds]);
+
   const addWorkspace = useCallback(async (rootPath: string) => {
     setError(null);
-    const res = await fetch('/api/workspaces', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ rootPath }),
-    });
-    const data = (await res.json()) as { error?: string };
-    if (!res.ok) throw new Error(data.error || 'No se pudo indexar la carpeta.');
+    await createWorkspaceRequest(rootPath);
     await fetchGraph(activeWorkspaceId);
   }, [activeWorkspaceId, fetchGraph]);
 
   const rescanWorkspace = useCallback(async (id: string) => {
-    const res = await fetch(`/api/workspaces/${encodeURIComponent(id)}/rescan`, { method: 'POST' });
-    if (!res.ok) throw new Error('Error al re-escanear la carpeta.');
+    await rescanWorkspaceRequest(id);
     await fetchGraph(activeWorkspaceId);
   }, [activeWorkspaceId, fetchGraph]);
 
   const removeWorkspace = useCallback(async (id: string) => {
-    const res = await fetch(`/api/workspaces/${encodeURIComponent(id)}`, { method: 'DELETE' });
-    if (!res.ok) throw new Error('Error al eliminar workspace.');
+    await deleteWorkspaceRequest(id);
     if (activeWorkspaceId === id) setActiveWorkspaceId('all');
     await fetchGraph('all');
   }, [activeWorkspaceId, fetchGraph]);
 
   const copyCompactContext = useCallback(
-    async (rootNodeId?: string): Promise<number> => {
-      const params = new URLSearchParams({ workspaceId: activeWorkspaceId, notify: '1' });
-      if (rootNodeId) params.set('rootNodeId', rootNodeId);
-      const res = await fetch(`/api/agent/context?${params.toString()}`);
-      if (!res.ok) return 0;
-      const data = (await res.json()) as { summaryText: string; estimatedTokensSaved: number };
-      if (navigator.clipboard?.writeText) {
-        try {
-          await Promise.race([
-            navigator.clipboard.writeText(data.summaryText),
-            new Promise<void>((resolve) => setTimeout(resolve, 250)),
-          ]);
-        } catch {
-          // Clipboard write may be blocked inside sandboxed iframes; server notification & savings still succeed
-        }
-      }
-      return data.estimatedTokensSaved;
-    },
+    (rootNodeId?: string) => copyCompactContextRequest(activeWorkspaceId, rootNodeId),
     [activeWorkspaceId]
   );
 
@@ -242,10 +253,14 @@ export function useFileGraph(liveOptions?: {
     onNodesChange,
     resetNodePositions,
     hasCustomPositions,
+    canArrangeSelectedSubtree,
+    arrangeSelectedSubtree,
     activeWorkspaceId,
     setActiveWorkspaceId,
     displayMode,
     setDisplayMode,
+    nodeTheme,
+    setNodeTheme,
     showSymbols,
     setShowSymbols,
     showImportEdges,

@@ -89,7 +89,8 @@ export function createWorkspaceRoutes(deps: {
       return;
     }
 
-    const scanned = scanWorkspaceDirectory(workspace);
+    const existingNodes = deps.fileGraphRepo.listNodes(workspace.id);
+    const scanned = scanWorkspaceDirectory(workspace, undefined, 280, existingNodes);
     const updated = { ...workspace, lastScannedAt: Date.now() };
     deps.workspaceRepo.upsert(updated);
     deps.fileGraphRepo.replaceWorkspaceGraph(workspace.id, scanned.nodes, scanned.edges);

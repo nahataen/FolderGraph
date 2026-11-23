@@ -62,6 +62,8 @@ export default function App() {
           onRemoveWorkspace={fileGraph.removeWorkspace}
           displayMode={fileGraph.displayMode}
           onDisplayModeChange={fileGraph.setDisplayMode}
+          nodeTheme={fileGraph.nodeTheme}
+          onNodeThemeChange={fileGraph.setNodeTheme}
           showSymbols={fileGraph.showSymbols}
           onToggleSymbols={() => fileGraph.setShowSymbols((v) => !v)}
           showImportEdges={fileGraph.showImportEdges}
@@ -72,6 +74,8 @@ export default function App() {
           onNodesChange={fileGraph.onNodesChange}
           onResetPositions={fileGraph.resetNodePositions}
           hasCustomPositions={fileGraph.hasCustomPositions}
+          canArrangeSubtree={fileGraph.canArrangeSelectedSubtree}
+          onArrangeSubtree={fileGraph.arrangeSelectedSubtree}
           selectedNode={fileGraph.selectedNode}
           onSelectNode={fileGraph.setSelectedNodeId}
           searchQuery={fileGraph.searchQuery}

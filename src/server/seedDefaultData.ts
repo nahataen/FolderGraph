@@ -28,6 +28,14 @@ export function seedInitialWorkspacesAndChat(
       const scanned = scanWorkspaceDirectory(workspace);
       fileGraphRepo.replaceWorkspaceGraph(wsId, scanned.nodes, scanned.edges);
     }
+  } else {
+    for (const ws of existingWorkspaces) {
+      const currentNodes = fileGraphRepo.listNodes(ws.id);
+      if (currentNodes.length > 0 && currentNodes.some((n) => !n.metadata.modifiedAt) && fs.existsSync(ws.rootPath)) {
+        const refreshed = scanWorkspaceDirectory(ws, undefined, 280, currentNodes);
+        fileGraphRepo.replaceWorkspaceGraph(ws.id, refreshed.nodes, refreshed.edges);
+      }
+    }
   }
 
   const existingChatNodes = chatGraphRepo.listNodes();

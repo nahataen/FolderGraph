@@ -11,6 +11,7 @@ import {
 import type { FileGraphRepository } from '../db/fileGraphRepo';
 import type { WorkspaceRepository } from '../db/workspaceRepo';
 import type { WorkspaceRecord } from '../types/indexer';
+import type { AgentActivityEvent } from '../types/protocol';
 import type { WsHub } from './wsHub';
 
 export class WorkspaceWatcherService {
@@ -21,7 +22,8 @@ export class WorkspaceWatcherService {
   constructor(
     private readonly workspaceRepo: WorkspaceRepository,
     private readonly fileGraphRepo: FileGraphRepository,
-    private readonly wsHub: WsHub
+    private readonly wsHub: WsHub,
+    private readonly onActivity?: (activity: AgentActivityEvent) => void
   ) {}
 
   startAllActive(): void {
@@ -69,29 +71,29 @@ export class WorkspaceWatcherService {
         timestamp: Date.now(),
       });
 
-      this.wsHub.broadcast({
-        type: 'agent:activity',
-        activity: {
-          id: crypto.randomUUID(),
-          actor: 'fs',
-          action: isMove ? 'move' : reason === 'add' ? 'create' : 'edit',
-          label: isMove
-            ? `Movido ${baseName}`
-            : `${reason === 'add' ? 'Creado' : 'Editado'} ${baseName}`,
-          nodeId: fileId,
-          fromNodeId: isMove ? prevUnlink.nodeId : undefined,
-          toNodeId: isMove ? fileId : undefined,
-          filePath: normalized,
-          timestamp: Date.now(),
-        },
-      });
+      const activity: AgentActivityEvent = {
+        id: crypto.randomUUID(),
+        actor: 'fs',
+        action: isMove ? 'move' : reason === 'add' ? 'create' : 'edit',
+        label: isMove
+          ? `Movido ${baseName}`
+          : `${reason === 'add' ? 'Creado' : 'Editado'} ${baseName}`,
+        nodeId: fileId,
+        fromNodeId: isMove ? prevUnlink.nodeId : undefined,
+        toNodeId: isMove ? fileId : undefined,
+        filePath: normalized,
+        timestamp: Date.now(),
+      };
+      this.onActivity?.(activity);
+      this.wsHub.broadcast({ type: 'agent:activity', activity });
     };
 
     const scheduleFullBranchRescan = (reason: 'add' | 'unlink' | 'rescan', changedPath: string) => {
       const existingTimer = this.timers.get(workspace.id);
       if (existingTimer) clearTimeout(existingTimer);
       const timer = setTimeout(() => {
-        const result = scanWorkspaceDirectory(workspace);
+        const existingNodes = this.fileGraphRepo.listNodes(workspace.id);
+        const result = scanWorkspaceDirectory(workspace, undefined, 280, existingNodes);
         this.fileGraphRepo.replaceWorkspaceGraph(workspace.id, result.nodes, result.edges);
         this.workspaceRepo.upsert({ ...workspace, lastScannedAt: Date.now() });
         this.wsHub.broadcast({
@@ -122,18 +124,17 @@ export class WorkspaceWatcherService {
           changedNodeId: fileId,
           timestamp: Date.now(),
         });
-        this.wsHub.broadcast({
-          type: 'agent:activity',
-          activity: {
-            id: crypto.randomUUID(),
-            actor: 'fs',
-            action: 'delete',
-            label: `Eliminado ${baseName}`,
-            nodeId: fileId,
-            filePath: normalized,
-            timestamp: Date.now(),
-          },
-        });
+        const activity: AgentActivityEvent = {
+          id: crypto.randomUUID(),
+          actor: 'fs',
+          action: 'delete',
+          label: `Eliminado ${baseName}`,
+          nodeId: fileId,
+          filePath: normalized,
+          timestamp: Date.now(),
+        };
+        this.onActivity?.(activity);
+        this.wsHub.broadcast({ type: 'agent:activity', activity });
       })
       .on('addDir', (p) => scheduleFullBranchRescan('add', p))
       .on('unlinkDir', (p) => scheduleFullBranchRescan('unlink', p));

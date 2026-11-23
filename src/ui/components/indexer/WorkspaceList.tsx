@@ -1,5 +1,6 @@
 import { RefreshCw, Trash2 } from 'lucide-react';
 import type { WorkspaceRecord } from '../../../types/indexer';
+import { formatCompactBadgeTime, formatFullDateTime } from '../../utils/dateFormat';
 
 interface WorkspaceListProps {
   workspaces: WorkspaceRecord[];
@@ -41,10 +42,13 @@ export function WorkspaceList({
             <button
               type="button"
               onClick={() => onSelectWorkspace(ws.id)}
-              className="flex-1 min-w-0 text-left truncate font-mono"
-              title={ws.rootPath}
+              className="flex-1 min-w-0 text-left"
+              title={`${ws.rootPath}\nÚltimo escaneo: ${formatFullDateTime(ws.lastScannedAt)}`}
             >
-              {ws.name}
+              <span className="block truncate font-mono">{ws.name}</span>
+              <span className="block text-[10px] font-mono text-slate-500 truncate">
+                escaneado {formatCompactBadgeTime(ws.lastScannedAt)}
+              </span>
             </button>
             <div className="flex items-center gap-1 shrink-0">
               <button

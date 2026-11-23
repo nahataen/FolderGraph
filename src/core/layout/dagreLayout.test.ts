@@ -142,6 +142,23 @@ test('buildStructuralFlowGraph animates active paths and live transfer edges', (
   assert.equal(animatedContains.animated, true);
 
   const transferEdge = active.edges.find((e) => e.id === 'live:tr1')!;
+  assert.equal(transferEdge.type, 'dashedRelation');
   assert.equal(transferEdge.animated, true);
-  assert.equal(transferEdge.label, 'movido');
+  assert.equal((transferEdge.data as { shortTag?: string })?.shortTag, 'movido');
+});
+
+test('buildStructuralFlowGraph supports capsules mode and propagates nodeTheme', () => {
+  const capGraph = buildStructuralFlowGraph(nodes, edges, {
+    displayMode: 'capsules',
+    nodeTheme: 'neon',
+    showSymbols: true,
+    showImportEdges: false,
+    selectedNodeId: null,
+    highlightedIds: new Set(),
+    collapsedIds: new Set(),
+  });
+
+  const fileNode = capGraph.nodes.find((n) => n.id === 'file1')!;
+  assert.equal(fileNode.data.displayMode, 'capsules');
+  assert.equal(fileNode.data.nodeTheme, 'neon');
 });

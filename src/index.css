@@ -20,6 +20,17 @@
   }
 }
 
+.react-flow__edges,
+.react-flow__edges svg,
+.react-flow__edgelabel-renderer {
+  z-index: 1 !important;
+}
+
+.react-flow__nodes {
+  position: relative;
+  z-index: 10 !important;
+}
+
 .react-flow__node {
   transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), opacity 180ms ease;
 }

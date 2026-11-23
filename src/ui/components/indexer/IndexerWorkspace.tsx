@@ -1,26 +1,14 @@
-import { useEffect, useState } from 'react';
-import { Background, Controls, MiniMap, ReactFlow, useReactFlow, type Edge, type Node, type NodeTypes, type OnNodesChange } from '@xyflow/react';
+import { useState } from 'react';
+import { Background, Controls, MiniMap, ReactFlow, type Edge, type Node, type OnNodesChange } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import type { StructuralFlowNodeData } from '../../../core/layout/dagreLayout';
-import type { FileNodeRecord, NodeDisplayMode, WorkspaceRecord } from '../../../types/indexer';
+import type { FileNodeRecord, NodeDisplayMode, NodeVisualTheme, WorkspaceRecord } from '../../../types/indexer';
 import type { AgentActivityEvent } from '../../../types/protocol';
-import { StructuralNode } from '../nodes/StructuralNode';
 import { ActivityHud } from './ActivityHud';
+import { AutoFitView } from './AutoFitView';
+import { structuralEdgeTypes, structuralNodeTypes } from './flowRegistry';
 import { NodeInspector } from './NodeInspector';
 import { WorkspaceSidebar } from './WorkspaceSidebar';
-
-const nodeTypes: NodeTypes = {
-  structuralNode: StructuralNode,
-};
-
-function AutoFitOnCountChange({ nodeCount, panelKey }: { nodeCount: number; panelKey: string }) {
-  const { fitView } = useReactFlow();
-  useEffect(() => {
-    const t = setTimeout(() => void fitView({ padding: 0.18, duration: 240 }), 60);
-    return () => clearTimeout(t);
-  }, [nodeCount, panelKey, fitView]);
-  return null;
-}
 
 interface IndexerWorkspaceProps {
   workspaces: WorkspaceRecord[];
@@ -34,6 +22,8 @@ interface IndexerWorkspaceProps {
   onRemoveWorkspace: (id: string) => Promise<void>;
   displayMode: NodeDisplayMode;
   onDisplayModeChange: (mode: NodeDisplayMode) => void;
+  nodeTheme: NodeVisualTheme;
+  onNodeThemeChange: (theme: NodeVisualTheme) => void;
   showSymbols: boolean;
   onToggleSymbols: () => void;
   showImportEdges: boolean;
@@ -44,6 +34,8 @@ interface IndexerWorkspaceProps {
   onNodesChange: OnNodesChange<Node<StructuralFlowNodeData>>;
   onResetPositions: () => void;
   hasCustomPositions: boolean;
+  canArrangeSubtree: boolean;
+  onArrangeSubtree: () => void;
   selectedNode: FileNodeRecord | null;
   onSelectNode: (id: string | null) => void;
   searchQuery: string;
@@ -61,7 +53,6 @@ interface IndexerWorkspaceProps {
 export function IndexerWorkspace(props: IndexerWorkspaceProps) {
   const [leftOpen, setLeftOpen] = useState(true);
   const [rightOpen, setRightOpen] = useState(true);
-  const canvasWidthClass = 'flex-1 min-w-0 h-full relative overflow-hidden bg-[#0B0F17]';
 
   return (
     <div className="flex-1 min-h-0 flex overflow-hidden">
@@ -78,6 +69,8 @@ export function IndexerWorkspace(props: IndexerWorkspaceProps) {
           highlightedCount={props.highlightedCount}
           displayMode={props.displayMode}
           onDisplayModeChange={props.onDisplayModeChange}
+          nodeTheme={props.nodeTheme}
+          onNodeThemeChange={props.onNodeThemeChange}
           showSymbols={props.showSymbols}
           onToggleSymbols={props.onToggleSymbols}
           showImportEdges={props.showImportEdges}
@@ -89,7 +82,7 @@ export function IndexerWorkspace(props: IndexerWorkspaceProps) {
           onHidePanel={() => setLeftOpen(false)}
         />
       )}
-      <main className={canvasWidthClass} data-testid="structural-canvas">
+      <main className="flex-1 min-w-0 h-full relative overflow-hidden bg-[#0B0F17]" data-testid="structural-canvas">
         <ActivityHud
           recentActivities={props.recentActivities}
           totalTokensSaved={props.totalTokensSaved}
@@ -99,6 +92,8 @@ export function IndexerWorkspace(props: IndexerWorkspaceProps) {
           onShowLeft={() => setLeftOpen(true)}
           onShowRight={() => setRightOpen(true)}
           onCopyCompactContext={() => props.onCopyCompactContext()}
+          canArrangeSubtree={props.canArrangeSubtree}
+          onArrangeSubtree={props.onArrangeSubtree}
         />
 
         {props.error && (
@@ -115,7 +110,9 @@ export function IndexerWorkspace(props: IndexerWorkspaceProps) {
           <ReactFlow
             nodes={props.flowNodes}
             edges={props.flowEdges}
-            nodeTypes={nodeTypes}
+            nodeTypes={structuralNodeTypes}
+            edgeTypes={structuralEdgeTypes}
+            elevateEdgesOnSelect={false}
             nodesDraggable
             onNodesChange={props.onNodesChange}
             onNodeClick={(_e, node) => props.onSelectNode(node.id)}
@@ -126,7 +123,7 @@ export function IndexerWorkspace(props: IndexerWorkspaceProps) {
             minZoom={0.15}
             maxZoom={2.2}
           >
-            <AutoFitOnCountChange nodeCount={props.flowNodes.length} panelKey={`${leftOpen}-${rightOpen}`} />
+            <AutoFitView nodeCount={props.flowNodes.length} panelKey={`${leftOpen}-${rightOpen}`} />
             <Background color="#1E293B" gap={24} size={1} />
             <Controls showInteractive={false} />
             <MiniMap nodeColor="#38BDF8" maskColor="rgba(11, 15, 23, 0.78)" />
@@ -141,6 +138,8 @@ export function IndexerWorkspace(props: IndexerWorkspaceProps) {
           onHidePanel={() => setRightOpen(false)}
           onExportSubgraph={props.onExportSubgraph}
           onCopyCompactContext={props.onCopyCompactContext}
+          canArrangeSubtree={props.canArrangeSubtree}
+          onArrangeSubtree={props.onArrangeSubtree}
         />
       )}
     </div>

@@ -1,13 +1,14 @@
 import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
 import { Maximize2, Minimize2, AlertCircle } from 'lucide-react';
 import type { ChatTimelineFlowData } from '../../hooks/useChatGraph';
-import { formatShortTime } from '../../utils/graphStyles';
+import { formatFullDateTime, formatShortDateTime } from '../../utils/dateFormat';
 
 type ChatNodeType = Node<ChatTimelineFlowData, 'chatTimelineNode'>;
 
 export function ChatTimelineNode({ data }: NodeProps<ChatNodeType>) {
   const { record, expanded, laneColor, onToggleExpand } = data;
-  const timeLabel = formatShortTime(record.timestamp);
+  const timeLabel = formatShortDateTime(record.timestamp);
+  const fullTimeLabel = formatFullDateTime(record.timestamp);
 
   if (!expanded) {
     return (
@@ -35,6 +36,7 @@ export function ChatTimelineNode({ data }: NodeProps<ChatNodeType>) {
 
   return (
     <div
+      title={fullTimeLabel}
       className={`w-[244px] rounded-lg bg-[#161E2E] border p-3 ${
         record.isIsolated ? 'border-amber-500/60' : 'border-white/[0.12]'
       }`}

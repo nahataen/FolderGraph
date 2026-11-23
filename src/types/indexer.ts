@@ -1,6 +1,7 @@
 export type NodeKind = 'folder' | 'file' | 'symbol';
 export type EdgeRelationType = 'contains' | 'imports' | 'references';
-export type NodeDisplayMode = 'hybrid' | 'minimal' | 'detailed';
+export type NodeDisplayMode = 'hybrid' | 'minimal' | 'capsules' | 'detailed';
+export type NodeVisualTheme = 'classic' | 'glass' | 'neon' | 'blueprint' | 'gradient';
 
 export interface WorkspaceRecord {
   id: string;
@@ -20,6 +21,8 @@ export interface FileNodeMetadata {
   isRoot?: boolean;
   workspaceId: string;
   workspaceName?: string;
+  createdAt?: number;
+  modifiedAt?: number;
 }
 
 export interface FileNodeRecord {

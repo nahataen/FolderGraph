@@ -2,7 +2,7 @@ import { Background, Controls, MiniMap, ReactFlow, type Edge, type Node, type No
 import { Trash2, X } from 'lucide-react';
 import type { ChatFilterMode, ChatNodeRecord } from '../../../types/chatGraph';
 import type { ChatTimelineFlowData } from '../../hooks/useChatGraph';
-import { formatShortTime } from '../../utils/graphStyles';
+import { formatFullDateTime, formatRelativeTime } from '../../utils/dateFormat';
 import { ChatTimelineNode } from '../nodes/ChatTimelineNode';
 import { ChatControlsBar } from './ChatControlsBar';
 
@@ -67,6 +67,7 @@ export function ChatTimelineWorkspace(props: ChatTimelineWorkspaceProps) {
               nodes={props.flowNodes}
               edges={props.flowEdges}
               nodeTypes={chatNodeTypes}
+              elevateEdgesOnSelect={false}
               nodesDraggable
               onNodesChange={props.onNodesChange}
               onNodeClick={(_e, node) => props.onSelectChatNode(node.id)}
@@ -97,7 +98,7 @@ export function ChatTimelineWorkspace(props: ChatTimelineWorkspaceProps) {
               </button>
             </div>
             <p className="text-[11px] font-mono text-slate-400">
-              {formatShortTime(props.selectedChatNode.timestamp)} ·{' '}
+              {formatFullDateTime(props.selectedChatNode.timestamp)} ({formatRelativeTime(props.selectedChatNode.timestamp)}) ·{' '}
               {props.selectedChatNode.isIsolated ? 'Nodo suelto' : 'Conectado al hilo'}
             </p>
             <p className="text-xs leading-relaxed text-slate-200 bg-[#0B0F17] p-3 rounded-lg border border-white/[0.07]">

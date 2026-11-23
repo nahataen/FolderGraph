@@ -1,6 +1,7 @@
 import { MarkerType, type Edge } from '@xyflow/react';
 import type { FileEdgeRecord, FileNodeRecord } from '../../types/indexer';
 import type { ActivityKind } from '../../types/protocol';
+import { computeSpanBaseOffset, type EdgeNodeBound } from './edgeRouting';
 
 export interface LiveTransferEdge {
   id: string;
@@ -58,101 +59,136 @@ export function buildStructuralEdges(
     showImportEdges: boolean;
     activeMap: Map<string, ActivityKind>;
     liveTransfers?: LiveTransferEdge[];
+    nodeBounds?: Map<string, EdgeNodeBound>;
   }
 ): Edge[] {
-  const visibleSet = new Set(visibleRecords.map((r) => r.id));
-  const nodeTypeMap = new Map(visibleRecords.map((r) => [r.id, r.type]));
+  const visibleMap = new Map(visibleRecords.map((r) => [r.id, r]));
+  const boundsMap = options.nodeBounds ?? new Map<string, EdgeNodeBound>();
+  const containsEdges: Edge[] = [];
+  const relationEdges: FileEdgeRecord[] = [];
 
-  const baseEdges: Edge[] = edgeRecords
-    .filter((edge) => {
-      if (!visibleSet.has(edge.sourceId) || !visibleSet.has(edge.targetId)) return false;
-      if (edge.relationType === 'contains') return true;
-      const touchesSelection =
-        options.selectedNodeId !== null &&
-        (edge.sourceId === options.selectedNodeId || edge.targetId === options.selectedNodeId);
-      const touchesActive = options.activeMap.has(edge.sourceId) || options.activeMap.has(edge.targetId);
-      return options.showImportEdges || touchesSelection || touchesActive;
-    })
-    .map((edge) => {
-      const isContains = edge.relationType === 'contains';
-      const isSymbolStem = isContains && nodeTypeMap.get(edge.targetId) === 'symbol';
+  for (const edge of edgeRecords) {
+    if (!visibleMap.has(edge.sourceId) || !visibleMap.has(edge.targetId)) continue;
+    if (edge.relationType === 'contains') {
+      const targetRec = visibleMap.get(edge.targetId);
+      const isSymbolStem = targetRec?.type === 'symbol';
       const touchesSelection =
         options.selectedNodeId !== null &&
         (edge.sourceId === options.selectedNodeId || edge.targetId === options.selectedNodeId);
       const targetActivity = options.activeMap.get(edge.targetId);
-      const sourceActivity = options.activeMap.get(edge.sourceId);
-      const activeAction = targetActivity ?? sourceActivity;
-      const isAnimatedFlow = Boolean(activeAction) && (isContains ? Boolean(targetActivity) : true);
-
-      if (isContains) {
-        const stroke = isAnimatedFlow
-          ? getActivityColor(targetActivity)
-          : touchesSelection
-            ? '#38BDF8'
-            : isSymbolStem
-              ? '#64748B'
-              : '#94A3B8';
-        return {
-          id: edge.id,
-          source: edge.sourceId,
-          target: edge.targetId,
-          type: isSymbolStem ? 'straight' : 'smoothstep',
-          animated: isAnimatedFlow,
-          className: isAnimatedFlow ? 'edge-flow-active' : undefined,
-          markerEnd: {
-            type: MarkerType.ArrowClosed,
-            width: isSymbolStem ? 11 : 16,
-            height: isSymbolStem ? 11 : 16,
-            color: stroke,
-          },
-          style: {
-            stroke,
-            strokeWidth: isAnimatedFlow ? 2.6 : touchesSelection ? 2.6 : isSymbolStem ? 1.35 : 1.9,
-            opacity: isAnimatedFlow || touchesSelection ? 1 : isSymbolStem ? 0.85 : 0.92,
-          },
-        };
-      }
-
-      const importColor = isAnimatedFlow
-        ? getActivityColor(activeAction)
-        : edge.relationType === 'imports'
+      const isAnimatedFlow = Boolean(targetActivity);
+      const stroke = isAnimatedFlow
+        ? getActivityColor(targetActivity)
+        : touchesSelection
           ? '#38BDF8'
-          : '#F59E0B';
-      return {
+          : isSymbolStem
+            ? '#64748B'
+            : '#94A3B8';
+
+      containsEdges.push({
         id: edge.id,
         source: edge.sourceId,
         target: edge.targetId,
-        type: 'default',
-        animated: touchesSelection || isAnimatedFlow,
+        type: isSymbolStem ? 'straight' : 'smoothstep',
+        zIndex: 0,
+        animated: isAnimatedFlow,
         className: isAnimatedFlow ? 'edge-flow-active' : undefined,
-        markerEnd: { type: MarkerType.ArrowClosed, width: 14, height: 14, color: importColor },
-        style: {
-          stroke: importColor,
-          strokeWidth: isAnimatedFlow ? 2.4 : touchesSelection ? 2 : 1.2,
-          strokeDasharray: '5 4',
-          opacity: isAnimatedFlow || touchesSelection ? 0.98 : 0.3,
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          width: isSymbolStem ? 11 : 16,
+          height: isSymbolStem ? 11 : 16,
+          color: stroke,
         },
-      };
-    });
+        style: {
+          stroke,
+          strokeWidth: isAnimatedFlow ? 2.6 : touchesSelection ? 2.6 : isSymbolStem ? 1.35 : 1.9,
+          opacity: isAnimatedFlow || touchesSelection ? 1 : isSymbolStem ? 0.85 : 0.92,
+        },
+      });
+      continue;
+    }
+
+    const touchesSelection =
+      options.selectedNodeId !== null &&
+      (edge.sourceId === options.selectedNodeId || edge.targetId === options.selectedNodeId);
+    const touchesActive = options.activeMap.has(edge.sourceId) || options.activeMap.has(edge.targetId);
+    if (options.showImportEdges || touchesSelection || touchesActive) {
+      relationEdges.push(edge);
+    }
+  }
+
+  let dashedLane = 0;
+  const totalDashed = relationEdges.length + (options.liveTransfers?.length ?? 0);
+  const dashedEdges: Edge[] = relationEdges.map((edge) => {
+    const touchesSelection =
+      options.selectedNodeId !== null &&
+      (edge.sourceId === options.selectedNodeId || edge.targetId === options.selectedNodeId);
+    const activeAction = options.activeMap.get(edge.targetId) ?? options.activeMap.get(edge.sourceId);
+    const isAnimatedFlow = Boolean(activeAction);
+    const srcName = visibleMap.get(edge.sourceId)?.name ?? edge.sourceId;
+    const dstName = visibleMap.get(edge.targetId)?.name ?? edge.targetId;
+    const isImport = edge.relationType === 'imports';
+    const color = isAnimatedFlow ? getActivityColor(activeAction) : isImport ? '#38BDF8' : '#F59E0B';
+    const laneIndex = dashedLane++;
+    const baseOffset = computeSpanBaseOffset(edge.sourceId, edge.targetId, boundsMap);
+    const shelfShift = ((laneIndex % 5) - 2) * 14;
+
+    return {
+      id: edge.id,
+      source: edge.sourceId,
+      target: edge.targetId,
+      type: 'dashedRelation',
+      zIndex: 0,
+      animated: touchesSelection || isAnimatedFlow,
+      className: isAnimatedFlow ? 'edge-flow-active' : undefined,
+      markerEnd: { type: MarkerType.ArrowClosed, width: 14, height: 14, color },
+      data: {
+        color,
+        dashArray: isImport ? '6 4' : '2 4',
+        laneIndex,
+        baseOffset,
+        shelfShift,
+        isHighlighted: touchesSelection,
+        isAnimatedFlow,
+        showBadge: touchesSelection || isAnimatedFlow || totalDashed <= 10,
+        shortTag: `${isImport ? 'imp' : 'ref'} → ${dstName}`,
+        hoverLabel: `${srcName} → ${dstName} (${isImport ? 'importa' : 'referencia'})`,
+      },
+    };
+  });
 
   for (const transfer of options.liveTransfers ?? []) {
-    if (!visibleSet.has(transfer.fromNodeId) || !visibleSet.has(transfer.toNodeId)) continue;
+    if (!visibleMap.has(transfer.fromNodeId) || !visibleMap.has(transfer.toNodeId)) continue;
     if (transfer.fromNodeId === transfer.toNodeId) continue;
     const color = getActivityColor(transfer.action);
-    baseEdges.push({
+    const srcName = visibleMap.get(transfer.fromNodeId)?.name ?? transfer.fromNodeId;
+    const dstName = visibleMap.get(transfer.toNodeId)?.name ?? transfer.toNodeId;
+    const laneIndex = dashedLane++;
+
+    dashedEdges.push({
       id: `live:${transfer.id}`,
       source: transfer.fromNodeId,
       target: transfer.toNodeId,
-      type: 'default',
+      type: 'dashedRelation',
+      zIndex: 0,
       animated: true,
       className: 'edge-flow-active',
       label: transfer.label,
-      labelStyle: { fill: '#F8FAFC', fontSize: 10, fontFamily: 'JetBrains Mono', fontWeight: 600 },
-      labelBgStyle: { fill: '#0F172A', fillOpacity: 0.92 },
       markerEnd: { type: MarkerType.ArrowClosed, width: 16, height: 16, color },
-      style: { stroke: color, strokeWidth: 2.8, strokeDasharray: '6 4', opacity: 1 },
+      data: {
+        color,
+        dashArray: '7 4',
+        laneIndex,
+        baseOffset: computeSpanBaseOffset(transfer.fromNodeId, transfer.toNodeId, boundsMap),
+        shelfShift: ((laneIndex % 5) - 2) * 14,
+        isHighlighted: true,
+        isAnimatedFlow: true,
+        showBadge: true,
+        shortTag: transfer.label,
+        hoverLabel: `${srcName} → ${dstName} (${transfer.label})`,
+      },
     });
   }
 
-  return baseEdges;
+  return [...containsEdges, ...dashedEdges];
 }

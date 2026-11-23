@@ -1,10 +1,11 @@
 import type { Node } from '@xyflow/react';
-import type { FileNodeRecord, NodeDisplayMode } from '../../types/indexer';
+import type { FileNodeRecord, NodeDisplayMode, NodeVisualTheme } from '../../types/indexer';
 import type { ActivityKind } from '../../types/protocol';
 
 export interface StructuralFlowNodeData extends Record<string, unknown> {
   record: FileNodeRecord;
   displayMode: NodeDisplayMode;
+  nodeTheme?: NodeVisualTheme;
   isHighlighted: boolean;
   isDimmed: boolean;
   isSelected: boolean;
@@ -60,6 +61,7 @@ export function layoutParentSymbols(
   syms: FileNodeRecord[],
   options: {
     displayMode: NodeDisplayMode;
+    nodeTheme?: NodeVisualTheme;
     selectedNodeId: string | null;
     highlightedIds: Set<string>;
     hasSearchHighlight: boolean;
@@ -101,6 +103,7 @@ export function layoutParentSymbols(
       data: {
         record: sym,
         displayMode: options.displayMode,
+        nodeTheme: options.nodeTheme,
         isHighlighted: options.highlightedIds.has(sym.id),
         isDimmed: options.hasSearchHighlight && !options.highlightedIds.has(sym.id),
         isSelected: options.selectedNodeId === sym.id,

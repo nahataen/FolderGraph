@@ -31,10 +31,15 @@ async function startServer() {
 
   seedInitialWorkspacesAndChat(workspaceRepo, fileGraphRepo, chatGraphRepo);
 
-  const watcherService = new WorkspaceWatcherService(workspaceRepo, fileGraphRepo, wsHub);
+  const agentApi = createAgentRoutes({ fileGraphRepo, wsHub });
+  const watcherService = new WorkspaceWatcherService(
+    workspaceRepo,
+    fileGraphRepo,
+    wsHub,
+    (activity) => agentApi.recordActivity(activity)
+  );
   watcherService.startAllActive();
 
-  const agentApi = createAgentRoutes({ fileGraphRepo, wsHub });
   const emitMcpActivity = (activity: Parameters<typeof agentApi.recordActivity>[0]) => {
     agentApi.recordActivity(activity);
     wsHub.broadcast({ type: 'agent:activity', activity });
