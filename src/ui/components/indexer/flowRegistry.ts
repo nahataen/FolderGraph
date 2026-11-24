@@ -1,5 +1,6 @@
 import type { EdgeTypes, NodeTypes } from '@xyflow/react';
 import { DashedRelationEdge } from '../edges/DashedRelationEdge';
+import { TreeBusEdge } from '../edges/TreeBusEdge';
 import { StructuralNode } from '../nodes/StructuralNode';
 
 export const structuralNodeTypes: NodeTypes = {
@@ -8,4 +9,5 @@ export const structuralNodeTypes: NodeTypes = {
 
 export const structuralEdgeTypes: EdgeTypes = {
   dashedRelation: DashedRelationEdge,
+  treeBus: TreeBusEdge,
 };

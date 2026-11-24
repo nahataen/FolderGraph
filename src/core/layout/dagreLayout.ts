@@ -35,7 +35,7 @@ function getNodeDimensions(
   }
   if (displayMode === 'detailed' || isFocused) return { width: 224, height: 96 };
   if (displayMode === 'capsules') return { width: 176, height: 38 };
-  return isMinimal ? { width: 76, height: 28 } : { width: 96, height: 32 };
+  return isMinimal ? { width: 76, height: 48 } : { width: 96, height: 54 };
 }
 
 function countHiddenDescendants(nodeId: string, childrenMap: Map<string, FileNodeRecord[]>): number {
@@ -111,9 +111,9 @@ export function buildStructuralFlowGraph(
   g.setDefaultEdgeLabel(() => ({}));
   g.setGraph({
     rankdir: 'TB',
-    nodesep: options.displayMode === 'minimal' ? 28 : 44,
-    ranksep: options.displayMode === 'minimal' ? 74 : 102,
-    edgesep: 24,
+    nodesep: options.displayMode === 'minimal' ? 34 : 56,
+    ranksep: options.displayMode === 'minimal' ? 82 : 118,
+    edgesep: 28,
   });
 
   const structuralNodes = visibleRecords.filter((r) => r.type !== 'symbol');

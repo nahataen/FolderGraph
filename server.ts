@@ -10,6 +10,7 @@ import { SettingsRepository } from './src/db/settingsRepo';
 import { WorkspaceRepository } from './src/db/workspaceRepo';
 import { createAgentRoutes } from './src/server/routes/agentRoutes';
 import { createChatRoutes } from './src/server/routes/chatRoutes';
+import { createHarnessRoutes } from './src/server/routes/harnessRoutes';
 import { createSettingsRoutes } from './src/server/routes/settingsRoutes';
 import { createWorkspaceRoutes } from './src/server/routes/workspaceRoutes';
 import { seedInitialWorkspacesAndChat } from './src/server/seedDefaultData';
@@ -48,6 +49,7 @@ async function startServer() {
   app.use('/api', createWorkspaceRoutes({ workspaceRepo, fileGraphRepo, watcherService, wsHub }));
   app.use('/api', createChatRoutes({ chatGraphRepo, fileGraphRepo, settingsRepo, wsHub }));
   app.use('/api', createSettingsRoutes({ settingsRepo, workspaceRepo, fileGraphRepo, chatGraphRepo, onActivity: emitMcpActivity }));
+  app.use('/api', createHarnessRoutes());
   app.use('/api', agentApi.router);
 
   mountMcpSseEndpoints(app, {

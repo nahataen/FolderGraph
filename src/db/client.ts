@@ -4,17 +4,59 @@ import path from 'node:path';
 
 let dbInstance: Database.Database | null = null;
 
+function isCorruptSqliteError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') return false;
+  const code = 'code' in error ? String((error as { code?: unknown }).code) : '';
+  const msg = 'message' in error ? String((error as { message?: unknown }).message) : '';
+  return (
+    code === 'SQLITE_CORRUPT' ||
+    code === 'SQLITE_NOTADB' ||
+    /malformed|not a database|corrupt/i.test(msg)
+  );
+}
+
+function removeDbFiles(dbPath: string): void {
+  for (const suffix of ['', '-wal', '-shm']) {
+    const target = `${dbPath}${suffix}`;
+    if (fs.existsSync(target)) {
+      fs.unlinkSync(target);
+    }
+  }
+}
+
+function openAndInit(dbPath: string): Database.Database {
+  const db = new Database(dbPath);
+  try {
+    db.pragma('journal_mode = WAL');
+    db.pragma('foreign_keys = ON');
+    initializeSchema(db);
+    return db;
+  } catch (error) {
+    try {
+      db.close();
+    } catch {
+      // ignore close failures on malformed db
+    }
+    throw error;
+  }
+}
+
 export function createDatabase(dbPath: string): Database.Database {
   if (dbPath !== ':memory:') {
     const dir = path.dirname(path.resolve(dbPath));
     fs.mkdirSync(dir, { recursive: true });
   }
 
-  const db = new Database(dbPath);
-  db.pragma('journal_mode = WAL');
-  db.pragma('foreign_keys = ON');
-  initializeSchema(db);
-  return db;
+  try {
+    return openAndInit(dbPath);
+  } catch (error) {
+    if (dbPath !== ':memory:' && isCorruptSqliteError(error)) {
+      console.warn(`Base de datos SQLite dañada detectada en ${dbPath}; recreando índice limpio automáticamente.`);
+      removeDbFiles(dbPath);
+      return openAndInit(dbPath);
+    }
+    throw error;
+  }
 }
 
 export function getDb(): Database.Database {

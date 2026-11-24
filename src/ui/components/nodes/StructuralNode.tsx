@@ -117,11 +117,11 @@ export function StructuralNode({ data }: NodeProps<StructuralNodeType>) {
     const fileDot = isMinimal ? 'w-6 h-6' : 'w-8 h-8';
     const fileLabel = isMinimal ? 'max-w-[76px] text-[10px]' : 'max-w-[96px] text-[11px]';
     return (
-      <div aria-label={`Archivo ${record.name}`} className={`relative flex flex-col items-center ${isMinimal ? 'w-[76px]' : 'w-[96px]'} ${opacityClass}`} title={dateTooltip}>
+      <div aria-label={`Archivo ${record.name}`} className={`relative flex flex-col items-center pb-1 ${isMinimal ? 'w-[76px]' : 'w-[96px]'} ${opacityClass}`} title={dateTooltip}>
         {pulseDot}
         <Handle type="target" position={Position.Top} className="!w-2 !h-2 !bg-slate-400 !border !border-[#0B0F17]" />
         <div className={`${fileDot} rounded-full flex items-center justify-center border-2 ${ringClass}`} style={inlineStyle ?? { borderColor: hasOverrideState ? undefined : accent }} />
-        <span className={`mt-1 font-mono text-slate-300 truncate ${fileLabel}`}>{record.name}</span>
+        <span className={`mt-1 px-1 rounded bg-[#0B0F17]/95 font-mono text-slate-200 truncate ${fileLabel}`}>{record.name}</span>
         <Handle type="source" position={Position.Bottom} className="!w-2 !h-2 !bg-slate-400 !border !border-[#0B0F17]" />
         {toggleBadge}
       </div>

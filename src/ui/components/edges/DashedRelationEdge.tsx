@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { BaseEdge, EdgeLabelRenderer, type Edge, type EdgeProps } from '@xyflow/react';
-import { computeDashedLaneGeometry } from '../../../core/layout/edgeRouting';
+import { computeDashedLaneGeometry, type EdgeNodeBound } from '../../../core/layout/edgeRouting';
 
 export interface DashedRelationEdgeData extends Record<string, unknown> {
   color: string;
@@ -8,6 +8,15 @@ export interface DashedRelationEdgeData extends Record<string, unknown> {
   laneIndex: number;
   baseOffset: number;
   shelfShift: number;
+  sourceOffsetX?: number;
+  targetOffsetX?: number;
+  approachTier?: number;
+  corridorSlot?: number;
+  expectedTargetX?: number;
+  fixedCorridorX?: number;
+  sourceHalfW?: number;
+  targetHalfW?: number;
+  obstacles?: EdgeNodeBound[];
   isHighlighted: boolean;
   isAnimatedFlow: boolean;
   showBadge: boolean;
@@ -32,6 +41,17 @@ export function DashedRelationEdge(props: EdgeProps<DashedEdgeType>) {
     laneIndex,
     baseOffset,
     shelfShift,
+    sourceOffsetX: data?.sourceOffsetX,
+    targetOffsetX: data?.targetOffsetX,
+    approachTier: data?.approachTier,
+    corridorSlot: data?.corridorSlot,
+    expectedTargetX: data?.expectedTargetX,
+    fixedCorridorX: data?.fixedCorridorX,
+    sourceHalfW: data?.sourceHalfW,
+    targetHalfW: data?.targetHalfW,
+    sourceId: props.source,
+    targetId: props.target,
+    obstacles: data?.obstacles,
   });
 
   const active = hovered || Boolean(data?.isHighlighted) || Boolean(data?.isAnimatedFlow) || Boolean(props.selected);
